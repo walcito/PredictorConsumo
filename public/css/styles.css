@@ -1,0 +1,120 @@
+html {
+  font-size: 14px;
+  position: relative;
+  min-height: 100%;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  margin-bottom: 60px;
+  background: #F7F7F7 !important;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+.navbar {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  border-radius: 10px 10px 0 0 !important;
+  font-weight: 600;
+  background: #000 !important;
+  color: #fff !important;
+}
+
+.table thead th,
+.table thead td,
+.table-dark th,
+.table-dark td {
+  background-color: #343a40 !important;
+  color: #fff !important;
+  border-color: #bdbdbd;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.table th {
+  background-color: #f1f3f5;
+  font-weight: 600;
+  width: 55%;
+}
+
+.resultado-valor {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+input[type="date"],
+input[type="number"] {
+  background: #e0e3e8;
+  color: #183c84;
+  border: 1.5px solid #c6d0e1;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+input[type="date"]:focus,
+input[type="number"]:focus {
+  border-color: #142B5E;
+  box-shadow: 0 0 3px #c1a35555;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.18);
+}
+
+.font-monospace {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.875rem;
+}
+
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.alert {
+  border-radius: 8px;
+  border-left: 5px solid;
+}
+
+.alert-danger {
+  border-left-color: #dc3545;
+}
+
+.alert-success {
+  border-left-color: #198754;
+}
+
+.alert-warning {
+  border-left-color: #ffc107;
+}
+
+.alert-info {
+  border-left-color: #0dcaf0;
+}
+
+.btn:focus,
+.btn:active:focus,
+.form-control:focus,
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}

@@ -1,0 +1,441 @@
+<div class="container mt-4 mb-5">
+  <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold">Predictor de Consumo Eléctrico</h1>
+    <p class="lead text-muted">Ingrese los datos históricos de los últimos 12 meses</p>
+  </div>
+
+  {{#if hasResult}}
+    <div class="row justify-content-center mb-5" id="seccionResultado">
+      <div class="col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+            <span class="fs-5">Resultado de Predicción</span>
+            <span class="badge bg-secondary fs-6">{{result.modeTitle}}</span>
+          </div>
+          <div class="card-body p-4">
+
+            <div class="alert {{result.alertClass}} mb-4">
+              <div><strong>Tendencia general:</strong> {{result.icon}} {{result.trend}}</div>
+              <div class="mt-1">{{result.message}}</div>
+            </div>
+
+            {{#if resultIsSMA}}
+              <table class="table table-bordered mb-0">
+                <tbody>
+                  <tr>
+                    <th>Promedio calculado (últimos 3 meses)</th>
+                    <td class="resultado-valor">{{result.average}} kWh</td>
+                  </tr>
+                  <tr>
+                    <th>Posible consumo del siguiente mes</th>
+                    <td class="resultado-valor">{{result.nextMonthPrediction}} kWh</td>
+                  </tr>
+                  <tr>
+                    <th>Último consumo registrado</th>
+                    <td>{{result.lastConsumption}} kWh</td>
+                  </tr>
+                  <tr>
+                    <th>Tendencia</th>
+                    <td><strong>{{result.trend}}</strong> ({{result.message}})</td>
+                  </tr>
+                </tbody>
+              </table>
+            {{/if}}
+
+            {{#if resultIsRegresion}}
+              <table class="table table-bordered mb-0">
+                <tbody>
+                  <tr>
+                    <th>Posible consumo futuro — Mes 13</th>
+                    <td class="resultado-valor">{{result.predictionMonth13}} kWh</td>
+                  </tr>
+                  <tr>
+                    <th>Valor de la pendiente (m)</th>
+                    <td><strong>{{result.slope}}</strong></td>
+                  </tr>
+                  <tr>
+                    <th>Tendencia</th>
+                    <td><strong>{{result.trend}}</strong> ({{result.message}})</td>
+                  </tr>
+                </tbody>
+              </table>
+            {{/if}}
+
+            {{#if resultIsVariacion}}
+              <table class="table table-bordered mb-3">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Mes</th>
+                    <th>Fecha</th>
+                    <th>Consumo (kWh)</th>
+                    <th>Variación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each result.monthlyVariations}}
+                    <tr>
+                      <td>{{this.month}}</td>
+                      <td>{{this.date}}</td>
+                      <td>{{this.consumption}} kWh</td>
+                      <td>
+                        {{#if this.isFirst}}
+                          <span class="text-muted">n/a</span>
+                        {{else if this.isZeroPrev}}
+                          <span class="text-danger fw-semibold">{{this.variationText}}</span>
+                        {{else}}
+                          <strong>{{this.variationText}}</strong>
+                        {{/if}}
+                      </td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+              <table class="table table-bordered mb-0">
+                <tbody>
+                  <tr>
+                    <th>Promedio general de variación</th>
+                    <td class="resultado-valor">{{result.averageVariation}}%</td>
+                  </tr>
+                  <tr>
+                    <th>Tendencia</th>
+                    <td><strong>{{result.trend}}</strong> ({{result.message}})</td>
+                  </tr>
+                </tbody>
+              </table>
+            {{/if}}
+
+            {{#if resultIsTendencia}}
+              <table class="table table-bordered mb-0">
+                <tbody>
+                  <tr>
+                    <th>Cantidad de aumentos (Meses que subieron ↑)</th>
+                    <td class="resultado-valor text-danger">{{result.increases}}</td>
+                  </tr>
+                  <tr>
+                    <th>Cantidad de disminuciones (Meses que bajaron ↓)</th>
+                    <td class="resultado-valor text-success">{{result.decreases}}</td>
+                  </tr>
+                  <tr>
+                    <th>Cantidad de meses estables →</th>
+                    <td class="resultado-valor text-warning">{{result.stables}}</td>
+                  </tr>
+                  <tr>
+                    <th>Tendencia general del consumo</th>
+                    <td><strong>{{result.trend}}</strong> ({{result.message}})</td>
+                  </tr>
+                </tbody>
+              </table>
+            {{/if}}
+
+            <div class="d-flex gap-2 mt-4">
+              <a href="/" class="btn btn-primary">Nueva Predicción</a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white py-3">
+          <h5 class="mb-0">Registro de Consumo Eléctrico Mensual</h5>
+          <small>Organizado desde el mes más antiguo al más reciente</small>
+        </div>
+        <div class="card-body p-4">
+
+          {{#if hasErrors}}
+            <div class="alert alert-danger mb-4">
+              <strong>Errores encontrados:</strong>
+              <ul class="mb-0 mt-1">
+                {{#each errors}}
+                  <li>{{this}}</li>
+                {{/each}}
+              </ul>
+            </div>
+          {{/if}}
+
+          <form method="post" action="/predict" id="formPrediccion" novalidate>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Tipo de ingreso de datos</label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="tipoIngreso"
+                    id="optInputs"
+                    value="inputs"
+                    {{#if isInputsMode}}checked{{/if}}
+                  />
+                  <label class="form-check-label" for="optInputs">24 campos individuales</label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="tipoIngreso"
+                    id="optTextarea"
+                    value="textarea"
+                    {{#if isTextareaMode}}checked{{/if}}
+                  />
+                  <label class="form-check-label" for="optTextarea">Textarea (texto libre)</label>
+                </div>
+              </div>
+            </div>
+
+            <div id="seccionInputs" {{#if isTextareaMode}}style="display:none;"{{/if}}>
+              <div class="table-responsive">
+                <table class="table table-bordered table-sm align-middle">
+                  <thead class="table-dark">
+                    <tr>
+                      <th style="width:90px;">Mes</th>
+                      <th>Fecha</th>
+                      <th>Consumo (kWh)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{#each inputRows}}
+                      <tr>
+                        <td class="text-center text-muted">Mes {{this.monthNumber}}</td>
+                        <td>
+                          <input
+                            type="date"
+                            name="dates"
+                            value="{{this.date}}"
+                            class="form-control form-control-sm campo-fecha"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="consumptions"
+                            value="{{this.consumption}}"
+                            class="form-control form-control-sm campo-valor"
+                            placeholder="0.00"
+                          />
+                        </td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="seccionTextarea" {{#if isInputsMode}}style="display:none;"{{/if}}>
+              <div class="mb-2">
+                <label class="form-label fw-semibold" for="datosTextarea">Datos históricos</label>
+                <textarea
+                  id="datosTextarea"
+                  name="historicalData"
+                  class="form-control font-monospace"
+                  rows="14"
+                  placeholder="2025-05-01, 150.35&#10;2025-06-01, 152.10&#10;... (exactamente 12 líneas)"
+                >{{historicalData}}</textarea>
+                <div class="form-text text-muted">Formato: YYYY-MM-DD, consumo — exactamente 12 filas (mínimo y máximo 12)</div>
+              </div>
+            </div>
+
+            <div class="mb-4 mt-3">
+              <label for="predictionMode" class="form-label fw-semibold">Modo de predicción</label>
+              <select name="predictionMode" class="form-select" id="predictionMode">
+                <option value="sma" {{#if isSMA}}selected{{/if}}>Promedio Móvil Simple (SMA)</option>
+                <option value="regresion" {{#if isRegresion}}selected{{/if}}>Regresión Lineal</option>
+                <option value="variacion" {{#if isVariacion}}selected{{/if}}>Variación Porcentual</option>
+                <option value="tendencia" {{#if isTendencia}}selected{{/if}}>Detección de Tendencia</option>
+              </select>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="btnCalcular">
+                Calcular predicción
+              </button>
+              <button type="submit" formaction="/clear" class="btn btn-outline-secondary btn-lg" id="btnLimpiar">
+                Limpiar
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var STORAGE_KEY = "predictor_consumo_draft_v1";
+    var optTextarea = document.getElementById("optTextarea");
+    var optInputs = document.getElementById("optInputs");
+    var secTextarea = document.getElementById("seccionTextarea");
+    var secInputs = document.getElementById("seccionInputs");
+    var dateInputs = document.querySelectorAll(".campo-fecha");
+    var valueInputs = document.querySelectorAll(".campo-valor");
+    var txtArea = document.getElementById("datosTextarea");
+    var modeSelect = document.getElementById("predictionMode");
+
+    function applyInputTypeUI(type) {
+      if (type === "textarea") {
+        optTextarea.checked = true;
+        secTextarea.style.display = "block";
+        secInputs.style.display = "none";
+      } else {
+        optInputs.checked = true;
+        secTextarea.style.display = "none";
+        secInputs.style.display = "block";
+      }
+    }
+
+    function saveDraftToStorage() {
+      var dates = [];
+      var consumptions = [];
+
+      dateInputs.forEach(function (input) {
+        dates.push(input.value);
+      });
+
+      valueInputs.forEach(function (input) {
+        consumptions.push(input.value);
+      });
+
+      var state = {
+        tipoIngreso: optTextarea && optTextarea.checked ? "textarea" : "inputs",
+        dates: dates,
+        consumptions: consumptions,
+        historicalData: txtArea ? txtArea.value : "",
+        predictionMode: modeSelect ? modeSelect.value : "sma"
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function restoreDraftFromStorage() {
+      try {
+        var savedRaw = localStorage.getItem(STORAGE_KEY);
+        if (!savedRaw) return;
+
+        var saved = JSON.parse(savedRaw);
+        if (!saved) return;
+
+        var serverHasInputs = Array.from(dateInputs).some(function (el) {
+          return el.value.trim() !== "";
+        }) || Array.from(valueInputs).some(function (el) {
+          return el.value.trim() !== "";
+        });
+
+        var serverHasTextarea = txtArea && txtArea.value.trim() !== "";
+
+        if (!serverHasInputs && Array.isArray(saved.dates) && Array.isArray(saved.consumptions)) {
+          dateInputs.forEach(function (input, idx) {
+            if (saved.dates[idx] !== undefined) input.value = saved.dates[idx];
+          });
+          valueInputs.forEach(function (input, idx) {
+            if (saved.consumptions[idx] !== undefined) input.value = saved.consumptions[idx];
+          });
+        }
+
+        if (!serverHasTextarea && txtArea && typeof saved.historicalData === "string") {
+          txtArea.value = saved.historicalData;
+        }
+
+        if (!serverHasInputs && !serverHasTextarea) {
+          if (saved.tipoIngreso) {
+            applyInputTypeUI(saved.tipoIngreso);
+          }
+          if (modeSelect && saved.predictionMode) {
+            modeSelect.value = saved.predictionMode;
+          }
+        } else {
+          saveDraftToStorage();
+        }
+      } catch (e) {}
+    }
+
+    restoreDraftFromStorage();
+
+    if (optTextarea && optInputs) {
+      optTextarea.addEventListener("change", function () {
+        applyInputTypeUI("textarea");
+        saveDraftToStorage();
+      });
+
+      optInputs.addEventListener("change", function () {
+        applyInputTypeUI("inputs");
+        saveDraftToStorage();
+      });
+    }
+
+    function autoFillSubsequentDates(baseDateValue) {
+      if (!baseDateValue) return;
+
+      var parts = baseDateValue.split("-");
+      if (parts.length !== 3) return;
+
+      var baseYear = parseInt(parts[0], 10);
+      var baseMonth = parseInt(parts[1], 10) - 1;
+      var baseDay = parseInt(parts[2], 10);
+
+      if (baseYear < 1900 || baseYear > 2100 || isNaN(baseMonth) || isNaN(baseDay)) {
+        return;
+      }
+
+      for (var i = 1; i < dateInputs.length; i++) {
+        var targetYear = baseYear + Math.floor((baseMonth + i) / 12);
+        var targetMonth = (baseMonth + i) % 12;
+        var maxDaysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+        var targetDay = Math.min(baseDay, maxDaysInMonth);
+
+        var yyyy = String(targetYear);
+        var mm = String(targetMonth + 1).padStart(2, "0");
+        var dd = String(targetDay).padStart(2, "0");
+
+        dateInputs[i].value = yyyy + "-" + mm + "-" + dd;
+      }
+
+      saveDraftToStorage();
+    }
+
+    if (dateInputs.length === 12) {
+      dateInputs[0].addEventListener("input", function () {
+        autoFillSubsequentDates(this.value);
+      });
+      dateInputs[0].addEventListener("change", function () {
+        autoFillSubsequentDates(this.value);
+      });
+    }
+
+    dateInputs.forEach(function (input) {
+      input.addEventListener("input", saveDraftToStorage);
+      input.addEventListener("change", saveDraftToStorage);
+    });
+
+    valueInputs.forEach(function (input) {
+      input.addEventListener("input", saveDraftToStorage);
+      input.addEventListener("change", saveDraftToStorage);
+    });
+
+    if (txtArea) {
+      txtArea.addEventListener("input", saveDraftToStorage);
+      txtArea.addEventListener("change", saveDraftToStorage);
+    }
+
+    if (modeSelect) {
+      modeSelect.addEventListener("change", saveDraftToStorage);
+    }
+
+    var btnLimpiar = document.getElementById("btnLimpiar");
+    if (btnLimpiar) {
+      btnLimpiar.addEventListener("click", function () {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (e) {}
+      });
+    }
+  });
+</script>
