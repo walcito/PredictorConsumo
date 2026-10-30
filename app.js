@@ -27,8 +27,4 @@ app.use((req, res) => {
   res.status(404).render("404", { title: "Página no encontrada" });
 });
 
-if (!process.env.VERCEL) {
-  app.listen(PORT);
-}
-
-export default app;
+app.listen(PORT);
